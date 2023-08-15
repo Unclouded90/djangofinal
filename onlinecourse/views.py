@@ -44,12 +44,9 @@ def show_exam_result(request, course_id, submission_id):
 
     question_results = []
     for question in course.question_set.all():
-        correct_choice_ids = question.choice_set.filter(is_correct=True).values_list('id', flat=True)
-        
-        # Filter selected choice IDs for the current question
         selected_choice_ids_for_question = [choice_id for choice_id in selected_choice_ids if Choice.objects.get(pk=choice_id).question == question]
 
-        is_correct = set(selected_choice_ids_for_question) == set(correct_choice_ids)
+        is_correct = question.is_get_score(selected_choice_ids_for_question)
 
         if is_correct:
             total_score += question.grade_point
@@ -58,19 +55,20 @@ def show_exam_result(request, course_id, submission_id):
         question_result = {
             'question_text': question.question_text,
             'is_correct': is_correct,
-            'correct_choices': correct_choice_ids,
-            'selected_choices': selected_choice_ids_for_question,
+            'correct_choices': question.choice_set.filter(is_correct=True),
+            'selected_choices': Choice.objects.filter(id__in=selected_choice_ids_for_question),
         }
         question_results.append(question_result)
 
-    passed_exam = total_score >= passing_score
+    correct_passing_score = sum([question.grade_point for question in course.question_set.filter(choice__is_correct=True)])
+    passed_exam = (total_score / correct_passing_score) >= 0.6
 
     context = {
         'course': course,
         'question_results': question_results,
         'total_score': total_score,
         'passed_exam': passed_exam,
-        'passing_score': passing_score,
+        'passing_score': correct_passing_score,
     }
 
     return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
