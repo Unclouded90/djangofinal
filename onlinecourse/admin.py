@@ -3,18 +3,20 @@ from .models import Question, Choice
 from .models import Course, Lesson, Instructor, Learner
 
 # <HINT> Register QuestionInline and ChoiceInline classes here
+class QuestionInline(admin.StackedInline):
+    model = Question
+    extra = 2
+
 class ChoiceInline(admin.StackedInline):
     model = Choice
     extra = 3
 
 class QuestionAdmin(admin.ModelAdmin):
-    model = Question
     inlines = [ChoiceInline]
 
 class LessonInline(admin.StackedInline):
     model = Lesson
     extra = 5
-
 
 # Register your models here.
 class CourseAdmin(admin.ModelAdmin):
